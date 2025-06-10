@@ -7,45 +7,47 @@ import (
 
 	"Forum/config"
 	"Forum/controllers"
-	"Forum/database"
 	"Forum/services"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
-	config.LoadEnv() // Charge .env
+	config.LoadEnv()
 
-	db, dbErr := config.InitDB() // db est maintenant correctement récupéré
+	db, dbErr := config.InitDB()
 	if dbErr != nil {
-		log.Fatal(dbErr.Error())
+		log.Fatalf("Erreur lors de l'initialisation de la base de données : %v", dbErr)
 	}
 	defer db.Close()
 
-	// Création des tables après l'initialisation de la DB
-	if err := database.CreateTables(db); err != nil { // Assurez-vous que cette fonction existe et est correcte dans votre package database
-		log.Fatalf("Error creating tables: %s", err.Error())
+	tmpl, err := template.ParseGlob("templates/*.html")
+	if err != nil {
+		log.Fatalf("Erreur lors du parsing des templates : %v", err)
 	}
 
-	temp, tempErr := template.ParseGlob("./templates/*.html")
-	if tempErr != nil {
-		log.Fatalf("Erreur chargement templates - %s", tempErr.Error())
-	}
+	// --- NOUVEAU CODE ---
+	// Initialisation des services
+	userService := services.NewUserService(db)
+	categoryService := services.NewCategoryService(db) // On crée le service des catégories
 
-	// Initialisez vos services et contrôleurs réels
-	userService := services.NewUserService(db)                         // Passez db
-	userController := controllers.NewUserController(userService, temp) // Passez service et templates
+	// Initialisation des contrôleurs
+	userController := controllers.InitUserController(userService, tmpl)
+	homeController := controllers.InitHomeController(categoryService, tmpl) // On crée le contrôleur pour l'accueil
 
-	router := mux.NewRouter()
+	r := mux.NewRouter()
 
-	// Configurez vos routes réelles
-	// Exemple pour les routes User
-	userRouter := router.PathPrefix("/users").Subrouter() // Crée un sous-routeur pour les URL /users/*
-	userController.RegisterUserRoutes(userRouter)         // Une méthode dans votre UserController
+	// Enregistrement de la route pour la page d'accueil
+	r.HandleFunc("/", homeController.DisplayHomepage).Methods("GET")
 
-	log.Println("Serveur en écoute sur http://localhost:8080") // Log avant ListenAndServe
-	serveErr := http.ListenAndServe(":8080", router)
-	if serveErr != nil {
-		log.Fatalf("Erreur lancement serveur - %s", serveErr.Error())
+	// Enregistrement des routes pour les utilisateurs
+	userController.UserRouter(r)
+
+	// --- ANCIEN CODE SUPPRIMÉ ---
+	// Les lignes concernant ProductService et ProductController ont été retirées.
+
+	log.Println("🚀 Le serveur écoute sur http://localhost:8080")
+	if err := http.ListenAndServe(":8080", r); err != nil {
+		log.Fatalf("Erreur ListenAndServe : %v", err)
 	}
 }

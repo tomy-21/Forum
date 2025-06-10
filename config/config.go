@@ -2,42 +2,39 @@ package config
 
 import (
 	"database/sql"
-	"fmt" // Import fmt for error wrapping
-	"log"
-	"os"
+	"fmt"
 
-	"github.com/joho/godotenv" // go get github.com/joho/godotenv
+	_ "github.com/go-sql-driver/mysql"
 )
 
-// LoadEnv loads environment variables from .env file
-func LoadEnv() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found or error loading .env file")
-	}
-}
-
-// InitDB initializes and returns the database connection.
-// This version directly opens the connection based on DSN from env
-// and assumes you will handle table creation separately or that
-// your database.Init/CreateTables functions will be called with the *sql.DB instance.
 func InitDB() (*sql.DB, error) {
-	dbDSN := os.Getenv("DB_DSN")
-	if dbDSN == "" {
-		return nil, fmt.Errorf("DB_DSN not set in environment variables")
+	// Récupération des parametres lié à la base de données (stocké dans un fichier d'environemment)
+	// Possibilité d'ajouter des valeur par défaut
+	user := GetEnvWithDefault("DB_USER", "")
+	pwd := GetEnvWithDefault("DB_PWD", "")
+	host := GetEnvWithDefault("DB_HOST", "")
+	port := GetEnvWithDefault("DB_PORT", "")
+	name := GetEnvWithDefault("DB_NAME", "")
+
+	if user == "" || host == "" || port == "" || name == "" {
+		return nil, fmt.Errorf(" Erreur connection base de données - Donneés de connexions manquantes")
 	}
 
-	db, err := sql.Open("mysql", dbDSN)
-	if err != nil {
-		return nil, fmt.Errorf("error opening database: %w", err)
+	// Préparation de la chaîne de connexion à la base de données
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pwd, host, port, name)
+
+	// Mise en place de la connexion
+	dbContext, dbContextErr := sql.Open("mysql", connectionString)
+	if dbContextErr != nil {
+		return nil, fmt.Errorf(" Erreur connection base de données - Erreur : \n\t %s", dbContextErr.Error())
 	}
 
-	if err = db.Ping(); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("error pinging database: %w", err)
+	// Test de ping la base de données
+	pingErr := dbContext.Ping()
+	if pingErr != nil {
+		dbContext.Close()
+		return nil, fmt.Errorf(" Erreur ping base de données - Erreur : \n\t %s", pingErr.Error())
 	}
 
-	log.Println("Successfully connected to MySQL database!")
-	// Table creation should be handled explicitly after this,
-	// for example by calling a refactored database.CreateTables(db)
-	return db, nil
+	return dbContext, nil
 }
