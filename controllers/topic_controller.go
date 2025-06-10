@@ -3,92 +3,49 @@ package controllers
 import (
 	"Forum/models"
 	"Forum/services"
-	"fmt"
 	"html/template"
+	"log"
 	"net/http"
-	"strconv"
-
-	"github.com/gorilla/mux"
 )
 
-type ProductControllers struct {
-	service  *services.ProductService
-	template *template.Template
+type TopicController struct {
+	service *services.TopicService
+	tmpl    *template.Template
 }
 
-func InitProductController(service *services.ProductService, template *template.Template) *ProductControllers {
-	return &ProductControllers{service: service, template: template}
+func InitTopicController(s *services.TopicService, t *template.Template) *TopicController {
+	return &TopicController{service: s, tmpl: t}
 }
 
-func (c *ProductControllers) ProductRouter(r *mux.Router) {
-	r.HandleFunc("/", c.DisplayList).Methods("GET")
-	r.HandleFunc("/product/create", c.CreateForm).Methods("GET")
-	r.HandleFunc("/product/{id}", c.DisplayById).Methods("GET")
-	r.HandleFunc("/product", c.Create).Methods("POST")
+// ShowCreateTopicForm affiche le formulaire de création de sujet.
+func (c *TopicController) ShowCreateTopicForm(w http.ResponseWriter, r *http.Request) {
+	c.tmpl.ExecuteTemplate(w, "create_topic.html", nil)
 }
 
-func (c *ProductControllers) CreateForm(w http.ResponseWriter, r *http.Request) {
-	if err := c.template.ExecuteTemplate(w, "product.create", nil); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func (c *ProductControllers) Create(w http.ResponseWriter, r *http.Request) {
-	convPrice, convPriceErr := strconv.ParseFloat(r.FormValue("price"), 32)
-	convCategorie, convCategorieErr := strconv.Atoi(r.FormValue("categorie"))
-	if convPriceErr != nil || convCategorieErr != nil {
-		http.Error(w, "Erreur : des données manquantes ou invalides", http.StatusBadRequest)
+// HandleCreateTopic traite la soumission du formulaire.
+func (c *TopicController) HandleCreateTopic(w http.ResponseWriter, r *http.Request) {
+	// Récupérer l'ID de l'utilisateur depuis le contexte (placé par le middleware)
+	userID, ok := r.Context().Value("userID").(int)
+	if !ok {
+		log.Println("Erreur critique: UserID non trouvé dans le contexte")
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
 		return
 	}
 
-	newProduct := models.Topic{
-		Name:        r.FormValue("name"),
+	r.ParseForm()
+
+	topic := models.Topic{
+		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
-		Price:       float32(convPrice),
-		CategorieId: convCategorie,
+		UserID:      userID, // L'auteur est l'utilisateur connecté !
 	}
 
-	// Validation basique
-	if newProduct.Name == "" {
-		http.Error(w, "Le nom du produit est obligatoire", http.StatusBadRequest)
+	_, err := c.service.Create(&topic)
+	if err != nil {
+		log.Printf("Erreur lors de la création du sujet: %v", err)
+		http.Error(w, "Erreur lors de la création du sujet", http.StatusInternalServerError)
 		return
 	}
 
-	productId, productErr := c.service.Create(newProduct)
-	if productErr != nil {
-		http.Error(w, productErr.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Redirection après POST → GET
-	http.Redirect(w, r, fmt.Sprintf("/product/%d", productId), http.StatusSeeOther)
-}
-
-func (c *ProductControllers) DisplayList(w http.ResponseWriter, r *http.Request) {
-	productList, productErr := c.service.ReadAll()
-	if productErr != nil {
-		http.Error(w, productErr.Error(), http.StatusInternalServerError)
-		return
-	}
-	if err := c.template.ExecuteTemplate(w, "product.list", productList); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func (c *ProductControllers) DisplayById(w http.ResponseWriter, r *http.Request) {
-	idProduct, idProductErr := strconv.Atoi(mux.Vars(r)["id"])
-	if idProductErr != nil {
-		http.Error(w, "Identifiant produit invalide", http.StatusBadRequest)
-		return
-	}
-
-	product, productErr := c.service.ReadById(idProduct)
-	if productErr != nil {
-		http.Error(w, productErr.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := c.template.ExecuteTemplate(w, "product.detail", product); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

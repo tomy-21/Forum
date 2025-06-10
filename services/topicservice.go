@@ -1,76 +1,66 @@
-// Fichier : Forum/services/productservice.go
-
 package services
 
 import (
 	"Forum/models"
-	"database/sql" // MODIFIÉ : On n'importe plus "Forum/database"
+	"database/sql"
 	"fmt"
 )
 
-// MODIFIÉ : La struct contient maintenant un champ pour la connexion à la BDD.
-type ProductService struct {
+type TopicService struct {
 	DB *sql.DB
 }
 
-// MODIFIÉ : Le constructeur accepte maintenant un pointeur *sql.DB.
-func NewProductService(db *sql.DB) *ProductService {
-	return &ProductService{DB: db}
+func NewTopicService(db *sql.DB) *TopicService {
+	return &TopicService{DB: db}
 }
 
-// Create insère un nouveau produit en base et retourne l'ID généré.
-// MODIFIÉ : On utilise `s.DB` au lieu de `database.DB`.
-func (s *ProductService) Create(p models.Topic) (int, error) {
+// Create insère un nouveau sujet en base de données.
+func (s *TopicService) Create(topic *models.Topic) (int, error) {
+	// Par défaut, un sujet est créé dans le forum 1 et avec le statut "ouvert" (true)
 	result, err := s.DB.Exec(
-		`INSERT INTO products (name, description, price, categorie_id) VALUES (?, ?, ?, ?)`,
-		p.Name, p.Description, p.Price, p.CategorieId,
+		"INSERT INTO sujet (forum_id, user_id, title, status, description) VALUES (?, ?, ?, ?, ?)",
+		1, // Forum ID par défaut, à adapter plus tard
+		topic.UserID,
+		topic.Title,
+		true, // Statut "ouvert"
+		topic.Description,
 	)
 	if err != nil {
-		return 0, fmt.Errorf("ProductService.Create – Exec error: %w", err)
+		return 0, fmt.Errorf("TopicService.Create: %w", err)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("ProductService.Create – LastInsertId error: %w", err)
+		return 0, fmt.Errorf("TopicService.Create LastInsertId: %w", err)
 	}
-
 	return int(id), nil
 }
 
-// ReadAll récupère tous les produits de la table.
-// MODIFIÉ : On utilise `s.DB` au lieu de `database.DB`.
-func (s *ProductService) ReadAll() ([]models.Topic, error) {
-	rows, err := s.DB.Query(`SELECT id, name, description, price, categorie_id FROM products`)
+// GetAllTopics récupère tous les sujets pour affichage.
+func (s *TopicService) GetAllTopics() ([]models.Topic, error) {
+	// On utilise une jointure pour récupérer le nom de l'auteur directement
+	// CORRECTION : On retire s.description de la requête SELECT
+	query := `
+        SELECT s.topic_id, s.title, s.created_at, u.name
+        FROM sujet s
+        JOIN Utilisateurs u ON s.user_id = u.user_id
+        ORDER BY s.created_at DESC`
+
+	rows, err := s.DB.Query(query)
 	if err != nil {
-		return nil, fmt.Errorf("ProductService.ReadAll – Query error: %w", err)
+		return nil, fmt.Errorf("TopicService.GetAllTopics Query: %w", err)
 	}
 	defer rows.Close()
 
-	products := []models.Topic{}
+	var topics []models.Topic
 	for rows.Next() {
-		var p models.Topic
-		if scanErr := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.CategorieId); scanErr != nil {
-			return nil, fmt.Errorf("ProductService.ReadAll – Scan error: %w", scanErr)
+		var t models.Topic
+		// CORRECTION : On retire &t.Description de la méthode Scan
+		if err := rows.Scan(&t.ID, &t.Title, &t.CreatedAt, &t.AuthorName); err != nil {
+			return nil, fmt.Errorf("TopicService.GetAllTopics Scan: %w", err)
 		}
-		products = append(products, p)
+		topics = append(topics, t)
 	}
 
-	return products, nil
-}
-
-// ... le reste des méthodes (ReadById, etc.) doit aussi utiliser `s.DB` ...
-func (s *ProductService) ReadById(id int) (models.Topic, error) {
-	var p models.Topic
-	// MODIFIÉ : On utilise `s.DB`
-	err := s.DB.QueryRow(
-		`SELECT id, name, description, price, categorie_id FROM products WHERE id = ?`,
-		id,
-	).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.CategorieId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return p, fmt.Errorf("ProductService.ReadById – pas de produit pour l'id %d", id)
-		}
-		return p, fmt.Errorf("ProductService.ReadById – Scan error: %w", err)
-	}
-	return p, nil
+	return topics, nil
 }

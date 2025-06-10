@@ -41,8 +41,9 @@ CREATE TABLE sujet (
     user_id INT NOT NULL,
     title VARCHAR(64) NOT NULL,
     status BOOLEAN NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     FOREIGN KEY (forum_id) REFERENCES forums(forum_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES Utilisateurs(user_id) ON DELETE CASCADE
 );
 
 -- Messages

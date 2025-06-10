@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Créer un nouveau sujet</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>Créer un nouveau sujet</h1>
+        <nav>
+            <a href="/">Accueil</a>
+        </nav>
+    </header>
+    <main>
+        <form action="/topics/create" method="post">
+            <div>
+                <label for="title">Titre :</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div>
+                <label for="description">Votre premier message :</label>
+                <textarea id="description" name="description" rows="8" required></textarea>
+            </div>
+            <button type="submit">Créer le sujet</button>
+        </form>
+    </main>
+</body>
+</html>

@@ -3,38 +3,36 @@ package config
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"os"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql" // Le driver mysql
 )
 
+// InitDB initialise et retourne une connexion à la base de données.
 func InitDB() (*sql.DB, error) {
-	// Récupération des parametres lié à la base de données (stocké dans un fichier d'environemment)
-	// Possibilité d'ajouter des valeur par défaut
-	user := GetEnvWithDefault("DB_USER", "")
-	pwd := GetEnvWithDefault("DB_PWD", "")
-	host := GetEnvWithDefault("DB_HOST", "")
-	port := GetEnvWithDefault("DB_PORT", "")
-	name := GetEnvWithDefault("DB_NAME", "")
+	// Récupération des variables d'environnement
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
 
-	if user == "" || host == "" || port == "" || name == "" {
-		return nil, fmt.Errorf(" Erreur connection base de données - Donneés de connexions manquantes")
+	// CORRECTION : Ajoutez "?parseTime=true" à la fin de la chaîne de connexion.
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, password, host, port, dbName)
+
+	// Ouverture de la connexion à la base de données
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("erreur lors de l'ouverture de la connexion à la BDD: %w", err)
 	}
 
-	// Préparation de la chaîne de connexion à la base de données
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pwd, host, port, name)
-
-	// Mise en place de la connexion
-	dbContext, dbContextErr := sql.Open("mysql", connectionString)
-	if dbContextErr != nil {
-		return nil, fmt.Errorf(" Erreur connection base de données - Erreur : \n\t %s", dbContextErr.Error())
+	// Vérification de la validité de la connexion
+	err = db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("erreur lors du ping de la BDD: %w", err)
 	}
 
-	// Test de ping la base de données
-	pingErr := dbContext.Ping()
-	if pingErr != nil {
-		dbContext.Close()
-		return nil, fmt.Errorf(" Erreur ping base de données - Erreur : \n\t %s", pingErr.Error())
-	}
-
-	return dbContext, nil
+	log.Println("Connexion à la base de données réussie !")
+	return db, nil
 }

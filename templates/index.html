@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accueil - Mon Forum</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>Bienvenue sur le Forum !</h1>
+        <nav>
+            <a href="/login">Se connecter</a> | 
+            <a href="/register">S'inscrire</a> |
+            <a href="/topics/create">Créer un sujet</a>
+        </nav>
+    </header>
+    
+    <main>
+        <h2>Catégories</h2>
+        {{if .Categories}}
+            {{range .Categories}}
+                <article>
+                    <h3><a href="/category/{{.ID}}">{{.Name}}</a></h3>
+                    <p>{{.Description}}</p>
+                </article>
+            {{end}}
+        {{else}}
+            <p>Aucune catégorie n'a été trouvée.</p>
+        {{end}}
+
+        <hr>
+
+        <h2>Derniers Sujets</h2>
+        {{if .Topics}}
+            {{range .Topics}}
+                <article>
+                    <h4><a href="/topic/{{.ID}}">{{.Title}}</a></h4>
+                    <p>par <strong>{{.AuthorName}}</strong> le {{.CreatedAt.Format "02 Jan 2006 à 15:04"}}</p>
+                    </article>
+            {{end}}
+        {{else}}
+            <p>Aucun sujet pour le moment. Soyez le premier à en <a href="/topics/create">créer un</a> !</p>
+        {{end}}
+    </main>
+</body>
+</html>
