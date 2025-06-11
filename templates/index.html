@@ -9,38 +9,37 @@
     <header>
         <h1>Bienvenue sur le Forum !</h1>
         <nav>
-            <a href="/login">Se connecter</a> | 
-            <a href="/register">S'inscrire</a> |
-            <a href="/topics/create">Créer un sujet</a>
+            {{if .IsAuthenticated}}
+                <a href="/topics/create">Créer un sujet</a>
+                <a href="/profil">Mon Profil</a>
+                <a href="/logout">Déconnexion</a>
+            {{else}}
+                <a href="/login">Se connecter</a>
+                <a href="/register">S'inscrire</a>
+            {{end}}
         </nav>
     </header>
     
     <main>
-        <h2>Catégories</h2>
-        {{if .Categories}}
-            {{range .Categories}}
-                <article>
-                    <h3><a href="/category/{{.ID}}">{{.Name}}</a></h3>
-                    <p>{{.Description}}</p>
-                </article>
-            {{end}}
-        {{else}}
-            <p>Aucune catégorie n'a été trouvée.</p>
+        {{range .Topics}}
+            <article>
+                <h4><a href="/topic/{{.ID}}">{{.Title}}</a></h4>
+                <p>par <strong>{{.AuthorName}}</strong> le {{.CreatedAt.Format "02 Jan 2006 à 15:04"}}</p>
+            </article>
         {{end}}
 
         <hr>
-
-        <h2>Derniers Sujets</h2>
-        {{if .Topics}}
-            {{range .Topics}}
-                <article>
-                    <h4><a href="/topic/{{.ID}}">{{.Title}}</a></h4>
-                    <p>par <strong>{{.AuthorName}}</strong> le {{.CreatedAt.Format "02 Jan 2006 à 15:04"}}</p>
-                    </article>
+        <div class="pagination">
+            {{if .Pagination.HasPrevPage}}
+                <a href="/?page={{.Pagination.PrevPage}}">‹ Précédent</a>
             {{end}}
-        {{else}}
-            <p>Aucun sujet pour le moment. Soyez le premier à en <a href="/topics/create">créer un</a> !</p>
-        {{end}}
+
+            <span> Page {{.Pagination.CurrentPage}} sur {{.Pagination.TotalPages}} </span>
+
+            {{if .Pagination.HasNextPage}}
+                <a href="/?page={{.Pagination.NextPage}}">Suivant ›</a>
+            {{end}}
+        </div>
     </main>
 </body>
 </html>

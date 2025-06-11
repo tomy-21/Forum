@@ -33,3 +33,17 @@ func (s *CategoryService) GetAllCategories() ([]models.Category, error) {
 
 	return categories, nil
 }
+
+// GetCategoryByID récupère une seule catégorie par son ID.
+func (s *CategoryService) GetCategoryByID(id int) (models.Category, error) {
+	var c models.Category
+	query := "SELECT category_id, name, description, created_at FROM categories WHERE category_id = ?"
+	err := s.DB.QueryRow(query, id).Scan(&c.ID, &c.Name, &c.Description, &c.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c, fmt.Errorf("aucune catégorie trouvée avec l'ID %d", id)
+		}
+		return c, fmt.Errorf("CategoryService.GetCategoryByID: %w", err)
+	}
+	return c, nil
+}

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Topic.Title}}</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+    <style>
+        .reaction-form { display: inline-flex; gap: 10px; align-items: center; }
+        .reaction-form button { margin: 0; padding: 0.2rem 0.5rem; font-size: 1rem; }
+        .sort-options { margin-bottom: 1rem; display: flex; gap: 1rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sujet : {{.Topic.Title}}</h1>
+        <p>Créé par <strong>{{.Topic.AuthorName}}</strong> le {{.Topic.CreatedAt.Format "02 Jan 2006 à 15:04"}}</p>
+        
+        {{if and .IsAuthenticated (or (eq .CurrentUser.ID .Topic.UserID) (eq .CurrentUser.RoleID 1))}}
+            <div>
+                <form action="/topic/{{.Topic.ID}}/delete" method="post" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce sujet ?');">
+                    <button type="submit" class="danger">Supprimer le Sujet</button>
+                </form>
+            </div>
+        {{end}}
+
+        <nav><a href="/">Retour à l'accueil</a></nav>
+    </header>
+
+    <main>
+        <h3>Messages du fil de discussion</h3>
+
+        <div class="sort-options">
+            <strong>Trier par :</strong>
+            <a href="/topic/{{.Topic.ID}}?sort=new">Plus récents</a>
+            <a href="/topic/{{.Topic.ID}}?sort=top">Plus populaires</a>
+            <a href="/topic/{{.Topic.ID}}?sort=old">Plus anciens</a>
+        </div>
+
+        {{range .Messages}}
+            <article>
+                <p><strong>{{.AuthorName}}</strong> a écrit le {{.CreatedAt.Format "02/01/2006 15:04:05"}} :</p>
+                <blockquote>{{.Content}}</blockquote>
+                
+                <div class="reaction-form">
+                    {{if $.IsAuthenticated}}
+                        <form action="/react" method="post" style="display:inline;">
+                            <input type="hidden" name="message_id" value="{{.ID}}">
+                            <input type="hidden" name="topic_id" value="{{$.Topic.ID}}">
+                            <input type="hidden" name="reaction_type" value="like">
+                            <button type="submit">👍</button>
+                        </form>
+                    {{end}}
+                    <span>{{.Likes}}</span>
+
+                    {{if $.IsAuthenticated}}
+                        <form action="/react" method="post" style="display:inline;">
+                            <input type="hidden" name="message_id" value="{{.ID}}">
+                            <input type="hidden" name="topic_id" value="{{$.Topic.ID}}">
+                            <input type="hidden" name="reaction_type" value="dislike">
+                            <button type="submit">👎</button>
+                        </form>
+                    {{end}}
+                    <span>{{.Dislikes}}</span>
+                </div>
+            </article>
+        {{end}}
+
+        <hr>
+
+        {{if .IsAuthenticated}}
+            <h4>Répondre à ce sujet</h4>
+            <form action="/topic/{{.Topic.ID}}/reply" method="post">
+                <div>
+                    <textarea name="content" rows="5" placeholder="Votre message..." required></textarea>
+                </div>
+                <button type="submit">Envoyer la réponse</button>
+            </form>
+        {{else}}
+            <p>Vous devez être <a href="/login">connecté</a> pour répondre et réagir aux messages.</p>
+        {{end}}
+    </main>
+</body>
+</html>

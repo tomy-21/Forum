@@ -5,7 +5,7 @@ import (
 	"Forum/services"
 	"html/template"
 	"net/http"
-	"time"
+	"time" // Assurez-vous d'importer le package time
 
 	"github.com/gorilla/mux"
 )
@@ -22,11 +22,13 @@ func InitUserController(service *services.UserService, tmpl *template.Template) 
 	}
 }
 
+// UserRouter enregistre toutes les routes liées à l'utilisateur
 func (c *UserController) UserRouter(r *mux.Router) {
 	r.HandleFunc("/register", c.showRegisterForm).Methods("GET")
 	r.HandleFunc("/register", c.handleRegister).Methods("POST")
 	r.HandleFunc("/login", c.showLoginForm).Methods("GET")
 	r.HandleFunc("/login", c.handleLogin).Methods("POST")
+	r.HandleFunc("/logout", c.HandleLogout).Methods("GET") // <-- Route de déconnexion
 }
 
 // Affiche le formulaire d'inscription
@@ -81,5 +83,19 @@ func (c *UserController) handleLogin(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true, // Important pour la sécurité
 	})
 
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// HandleLogout gère la déconnexion en supprimant le cookie.
+func (c *UserController) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	// Créer un cookie avec une date d'expiration passée pour que le navigateur le supprime
+	http.SetCookie(w, &http.Cookie{
+		Name:    "token",
+		Value:   "",
+		Expires: time.Now().Add(-time.Hour),
+		Path:    "/",
+	})
+
+	// Rediriger vers la page d'accueil
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

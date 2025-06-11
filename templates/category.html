@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Catégorie : {{.Category.Name}}</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>Catégorie : {{.Category.Name}}</h1>
+        <p>{{.Category.Description}}</p>
+        <nav><a href="/">Retour à l'accueil</a></nav>
+    </header>
+
+    <main>
+        <h2>Sujets dans cette catégorie</h2>
+        {{if .Topics}}
+            {{range .Topics}}
+                <article>
+                    <h4><a href="/topic/{{.ID}}">{{.Title}}</a></h4>
+                    <p>par <strong>{{.AuthorName}}</strong> le {{.CreatedAt.Format "02 Jan 2006 à 15:04"}}</p>
+                </article>
+            {{end}}
+        {{else}}
+            <p>Il n'y a pas encore de sujet dans cette catégorie.</p>
+        {{end}}
+
+        <hr>
+        <div class="pagination">
+            {{if .Pagination.HasPrevPage}}
+                <a href="/category/{{.Category.ID}}?page={{.Pagination.PrevPage}}">‹ Précédent</a>
+            {{end}}
+
+            <span> Page {{.Pagination.CurrentPage}} sur {{.Pagination.TotalPages}} </span>
+
+            {{if .Pagination.HasNextPage}}
+                <a href="/category/{{.Category.ID}}?page={{.Pagination.NextPage}}">Suivant ›</a>
+            {{end}}
+        </div>
+    </main>
+</body>
+</html>
