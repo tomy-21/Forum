@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
+	"github.com/gorilla/mux" // <-- CORRECTION : C'était "github.comcom/gorilla/mux"
 )
 
 type CategoryController struct {
@@ -35,7 +35,6 @@ func (c *CategoryController) ShowCategoryPage(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Récupérer les infos de la catégorie pour l'en-tête de la page
 	category, err := c.categoryService.GetCategoryByID(categoryID)
 	if err != nil {
 		log.Printf("Erreur GetCategoryByID: %v", err)
@@ -43,7 +42,7 @@ func (c *CategoryController) ShowCategoryPage(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Logique de pagination (similaire à celle du HomeController)
+	// Logique de pagination
 	const limit = 10
 	pageStr := r.URL.Query().Get("page")
 	page, err := strconv.Atoi(pageStr)
@@ -51,6 +50,7 @@ func (c *CategoryController) ShowCategoryPage(w http.ResponseWriter, r *http.Req
 		page = 1
 	}
 
+	// On passe l'ID de la catégorie pour filtrer le comptage
 	totalTopics, err := c.topicService.GetTotalTopicCount(categoryID)
 	if err != nil {
 		http.Error(w, "Impossible de charger les données", http.StatusInternalServerError)
@@ -60,6 +60,7 @@ func (c *CategoryController) ShowCategoryPage(w http.ResponseWriter, r *http.Req
 	offset := (page - 1) * limit
 	totalPages := int(math.Ceil(float64(totalTopics) / float64(limit)))
 
+	// On passe l'ID de la catégorie pour filtrer les sujets
 	topics, err := c.topicService.GetTopics(limit, offset, categoryID)
 	if err != nil {
 		http.Error(w, "Impossible de charger les sujets", http.StatusInternalServerError)
@@ -75,10 +76,17 @@ func (c *CategoryController) ShowCategoryPage(w http.ResponseWriter, r *http.Req
 		NextPage:    page + 1,
 	}
 
+	var isAuthenticated bool
+	if cookie, err := r.Cookie("token"); err == nil && cookie.Value != "" {
+		isAuthenticated = true
+	}
+
 	data := map[string]interface{}{
-		"Category":   category,
-		"Topics":     topics,
-		"Pagination": pagination,
+		"Category":        category,
+		"Topics":          topics,
+		"Pagination":      pagination,
+		"IsAuthenticated": isAuthenticated,
+		"Page":            "Category",
 	}
 
 	c.tmpl.ExecuteTemplate(w, "category.html", data)

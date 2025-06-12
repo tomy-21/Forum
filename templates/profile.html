@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Profil de {{.User.Name}}</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>Profil de {{.User.Name}}</h1>
+        {{template "_navbar.html" .}}
+    </header>
+
+    <main>
+        <p><strong>Nom d'utilisateur :</strong> {{.User.Name}}</p>
+        <p><strong>Email :</strong> {{.User.Email}}</p>
+        
+        <h3>Statistiques</h3>
+        <p><strong>Sujets créés :</strong> {{.TopicCount}}</p>
+        <p><strong>Messages postés :</strong> {{.MessageCount}}</p>
+
+        </main>
+</body>
+</html>

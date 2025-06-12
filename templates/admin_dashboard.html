@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Panneau d'Administration</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>Panneau d'Administration</h1>
+        <nav><a href="/">Retour au site</a></nav>
+    </header>
+    <main>
+        <h2>Gestion des Utilisateurs</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom d'utilisateur</th>
+                    <th>Email</th>
+                    <th>Rôle ID</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Users}}
+                <tr>
+                    <td>{{.ID}}</td>
+                    <td>{{.Name}}</td>
+                    <td>{{.Email}}</td>
+                    <td>{{.RoleID}}</td>
+                    <td>
+                        {{if ne .RoleID 1}} <form action="/admin/users/ban/{{.ID}}" method="post" onsubmit="return confirm('Bannir cet utilisateur ?');">
+                            <button class="danger" type="submit">Bannir</button>
+                        </form>
+                        {{end}}
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h2>Gestion des Sujets</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Titre</th>
+                    <th>Auteur</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Topics}}
+                <tr>
+                    <td>{{.ID}}</td>
+                    <td><a href="/topic/{{.ID}}">{{.Title}}</a></td>
+                    <td>{{.AuthorName}}</td>
+                    <td>
+                        <form action="/topic/{{.ID}}/delete" method="post" onsubmit="return confirm('Supprimer ce sujet ?');">
+                            <button class="danger" type="submit">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>

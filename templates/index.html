@@ -8,24 +8,40 @@
 <body>
     <header>
         <h1>Bienvenue sur le Forum !</h1>
-        <nav>
-            {{if .IsAuthenticated}}
-                <a href="/topics/create">Créer un sujet</a>
-                <a href="/profil">Mon Profil</a>
-                <a href="/logout">Déconnexion</a>
-            {{else}}
-                <a href="/login">Se connecter</a>
-                <a href="/register">S'inscrire</a>
-            {{end}}
-        </nav>
+
+        {{template "_navbar.html" .}}
+
     </header>
     
     <main>
-        {{range .Topics}}
-            <article>
-                <h4><a href="/topic/{{.ID}}">{{.Title}}</a></h4>
-                <p>par <strong>{{.AuthorName}}</strong> le {{.CreatedAt.Format "02 Jan 2006 à 15:04"}}</p>
-            </article>
+        <h2>Catégories</h2>
+        {{if .Categories}}
+            {{range .Categories}}
+                <article>
+                    <h3><a href="/category/{{.ID}}">{{.Name}}</a></h3>
+                    <p>{{.Description}}</p>
+                </article>
+            {{end}}
+        {{else}}
+            <p>Aucune catégorie n'a été trouvée.</p>
+        {{end}}
+
+        <hr>
+
+        <h2>Derniers Sujets</h2>
+        {{if .Topics}}
+            {{range .Topics}}
+                <article>
+                    <h4><a href="/topic/{{.ID}}">{{.Title}}</a></h4>
+                    <p>par <strong>{{.AuthorName}}</strong> le {{.CreatedAt.Format "02 Jan 2006 à 15:04"}}</p>
+                </article>
+            {{end}}
+        {{else}}
+            <p>Aucun sujet pour le moment. 
+            {{if .IsAuthenticated}}
+                Allez dans une catégorie pour en créer un !
+            {{end}}
+            </p>
         {{end}}
 
         <hr>

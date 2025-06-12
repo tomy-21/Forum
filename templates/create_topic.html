@@ -13,7 +13,7 @@
         </nav>
     </header>
     <main>
-        <form action="/topics/create" method="post">
+        <form action="/category/{{.CategoryID}}/topics/create" method="post">
             <div>
                 <label for="title">Titre :</label>
                 <input type="text" id="title" name="title" required>

@@ -99,3 +99,40 @@ func (c *UserController) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	// Rediriger vers la page d'accueil
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+// ... dans controllers/user_controller.go
+
+// ShowProfile affiche la page de profil de l'utilisateur connecté.
+func (c *UserController) ShowProfile(w http.ResponseWriter, r *http.Request) {
+	// Le middleware a déjà vérifié que l'utilisateur est connecté.
+	// On récupère son ID depuis le contexte.
+	userID, ok := r.Context().Value("userID").(int)
+	if !ok {
+		// Normalement impossible si le middleware est bien appliqué
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Récupérer les informations de l'utilisateur
+	user, err := c.service.GetUserByID(userID)
+	if err != nil {
+		http.Error(w, "Utilisateur non trouvé", http.StatusNotFound)
+		return
+	}
+
+	// Récupérer les statistiques
+	topicCount, _ := c.service.GetUserTopicCount(userID)
+	messageCount, _ := c.service.GetUserMessageCount(userID)
+
+	data := map[string]interface{}{
+		"User":         user,
+		"TopicCount":   topicCount,
+		"MessageCount": messageCount,
+		"Page":         "Profile", // Pour la navigation conditionnelle
+		// On passe aussi les infos d'authentification pour le _navbar.html
+		"IsAuthenticated": true,
+		"CurrentUser":     models.User{ID: user.ID, RoleID: user.RoleID},
+	}
+
+	c.tmpl.ExecuteTemplate(w, "profile.html", data)
+}

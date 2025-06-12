@@ -23,7 +23,7 @@
             </div>
         {{end}}
 
-        <nav><a href="/">Retour à l'accueil</a></nav>
+        {{template "_navbar.html" .}}
     </header>
 
     <main>
@@ -61,6 +61,12 @@
                         </form>
                     {{end}}
                     <span>{{.Dislikes}}</span>
+
+                    {{if and $.IsAuthenticated (or (eq $.CurrentUser.ID .UserID) (eq $.CurrentUser.RoleID 1))}}
+                        <form action="/message/{{.ID}}/delete" method="post" onsubmit="return confirm('Supprimer ce message ?');" style="display:inline; margin-left: 20px;">
+                            <button class="danger" type="submit">Supprimer</button>
+                        </form>
+                    {{end}}
                 </div>
             </article>
         {{end}}

@@ -62,9 +62,12 @@ func (s *UserService) Register(user *models.User) error {
 }
 
 // Login gère la logique de connexion (FT-2)
+
+// Login gère la logique de connexion
+// Login gère la logique de connexion et la création du token.
 func (s *UserService) Login(identifier, password string) (string, error) {
 	var user models.User
-	//  Récupérer l'utilisateur par nom ou email
+	// La requête DOIT récupérer le role_id de la base de données
 	err := s.DB.QueryRow(
 		"SELECT user_id, name, email, password, role_id FROM Utilisateurs WHERE name = ? OR email = ?",
 		identifier, identifier,
@@ -77,17 +80,17 @@ func (s *UserService) Login(identifier, password string) (string, error) {
 		return "", fmt.Errorf("erreur lors de la récupération de l'utilisateur: %w", err)
 	}
 
-	//  Comparer le mot de passe haché avec celui fourni
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		return "", errors.New("identifiants invalides")
 	}
 
-	//  Générer le token JWT
+	// Création des "claims" (les données du token)
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &models.Claims{
 		UserID:   user.ID,
 		Username: user.Name,
+		RoleID:   user.RoleID, // <-- ON AJOUTE LE RÔLE ICI
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
@@ -117,4 +120,59 @@ func validatePassword(password string) error {
 		return errors.New("le mot de passe doit contenir au moins un caractère spécial")
 	}
 	return nil
+}
+
+// ... dans services/userservice.go
+
+// GetAllUsers récupère tous les utilisateurs de la base de données.
+func (s *UserService) GetAllUsers() ([]models.User, error) {
+	query := `SELECT user_id, name, email, role_id FROM Utilisateurs`
+	rows, err := s.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var u models.User
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.RoleID); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}
+
+// BanUser met à jour le rôle d'un utilisateur pour le bannir.
+func (s *UserService) BanUser(userID int) error {
+	// On change le role_id à 4 (Banni)
+	_, err := s.DB.Exec("UPDATE Utilisateurs SET role_id = 4 WHERE user_id = ?", userID)
+	return err
+}
+
+// ... dans services/userservice.go, après vos autres méthodes
+
+// GetUserByID récupère les informations d'un utilisateur par son ID.
+func (s *UserService) GetUserByID(userID int) (models.User, error) {
+	var u models.User
+	query := "SELECT user_id, name, email, role_id FROM Utilisateurs WHERE user_id = ?"
+	err := s.DB.QueryRow(query, userID).Scan(&u.ID, &u.Name, &u.Email, &u.RoleID)
+	return u, err
+}
+
+// GetUserTopicCount retourne le nombre de sujets créés par un utilisateur.
+func (s *UserService) GetUserTopicCount(userID int) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM sujet WHERE user_id = ?"
+	err := s.DB.QueryRow(query, userID).Scan(&count)
+	return count, err
+}
+
+// GetUserMessageCount retourne le nombre de messages postés par un utilisateur.
+func (s *UserService) GetUserMessageCount(userID int) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM messages WHERE user_id = ?"
+	err := s.DB.QueryRow(query, userID).Scan(&count)
+	return count, err
 }

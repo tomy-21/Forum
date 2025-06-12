@@ -24,11 +24,9 @@ func InitHomeController(cs *services.CategoryService, ts *services.TopicService,
 	}
 }
 
-// DisplayHomepage gère l'affichage de la page d'accueil avec la pagination.
+// DisplayHomepage gère l'affichage de la page d'accueil.
 func (c *HomeController) DisplayHomepage(w http.ResponseWriter, r *http.Request) {
-	// --- LOGS DE DÉBOGAGE ---
-	log.Println("--- Début du traitement de la page d'accueil ---")
-
+	// Récupérer les catégories
 	categories, err := c.categoryService.GetAllCategories()
 	if err != nil {
 		log.Printf("ERREUR: Impossible de récupérer les catégories: %v", err)
@@ -36,37 +34,29 @@ func (c *HomeController) DisplayHomepage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	const limit = 6
-
+	// Logique de pagination pour les sujets
+	const limit = 4 // Vous pouvez ajuster cette valeur
 	pageStr := r.URL.Query().Get("page")
-	log.Printf("DEBUG: Paramètre 'page' reçu de l'URL : '%s'", pageStr)
-
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
 		page = 1
 	}
-	log.Printf("DEBUG: Page actuelle calculée : %d", page)
 
-	totalTopics, err := c.topicService.GetTotalTopicCount()
+	totalTopics, err := c.topicService.GetTotalTopicCount(0)
 	if err != nil {
-		log.Printf("ERREUR: Impossible de récupérer le nombre total de sujets: %v", err)
 		http.Error(w, "Impossible de charger les données", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("DEBUG: Nombre total de sujets : %d", totalTopics)
 
 	offset := (page - 1) * limit
-	log.Printf("DEBUG: Offset calculé pour la requête SQL : %d", offset)
-
 	totalPages := int(math.Ceil(float64(totalTopics) / float64(limit)))
 
-	topics, err := c.topicService.GetTopics(limit, offset)
+	topics, err := c.topicService.GetTopics(limit, offset, 0)
 	if err != nil {
 		log.Printf("ERREUR: Impossible de récupérer les sujets pour la page %d: %v", page, err)
 		http.Error(w, "Impossible de charger les sujets", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("DEBUG: Nombre de sujets récupérés pour cette page : %d", len(topics))
 
 	pagination := models.PaginationData{
 		CurrentPage: page,
@@ -77,18 +67,31 @@ func (c *HomeController) DisplayHomepage(w http.ResponseWriter, r *http.Request)
 		NextPage:    page + 1,
 	}
 
+	// --- LOGIQUE D'AUTHENTIFICATION SIMPLIFIÉE ---
 	var isAuthenticated bool
-	if cookie, err := r.Cookie("token"); err == nil && cookie.Value != "" {
+	var currentUser models.User
+
+	// On lit simplement le contexte, qui est mis à jour par le middleware PopulateContextMiddleware.
+	userID, okUserID := r.Context().Value("userID").(int)
+	roleID, okRoleID := r.Context().Value("roleID").(int)
+
+	if okUserID && okRoleID {
 		isAuthenticated = true
+		currentUser.ID = userID
+		currentUser.RoleID = roleID
+		// Le nom d'utilisateur pourrait aussi être passé via le contexte si nécessaire
+		currentUser.Name, _ = r.Context().Value("username").(string)
 	}
 
+	// Préparation de toutes les données pour la vue
 	data := map[string]interface{}{
 		"Categories":      categories,
 		"Topics":          topics,
 		"IsAuthenticated": isAuthenticated,
+		"CurrentUser":     currentUser,
 		"Pagination":      pagination,
+		"Page":            "Home",
 	}
 
-	log.Println("--- Fin du traitement, envoi du template ---")
 	c.tmpl.ExecuteTemplate(w, "index.html", data)
 }

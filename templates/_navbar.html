@@ -1,0 +1,23 @@
+<nav>
+    {{if ne .Page "Home"}}
+        <a href="/">Accueil</a>
+    {{end}}
+
+    {{if .IsAuthenticated}}
+        <a href="/profil">Mon Profil</a>
+
+        {{if eq .CurrentUser.RoleID 1}}
+            <a href="/admin" style="color: #ffb300; font-weight: bold;">Panneau d'Administration</a>
+        {{end}}
+
+        <a href="/logout">Déconnexion</a>
+    {{else}}
+        <a href="/login">Se connecter</a>
+        <a href="/register">S'inscrire</a>
+    {{end}}
+</nav>
+
+<form action="/search" method="get" style="margin-top: 1rem;">
+    <input type="search" name="q" placeholder="Rechercher un sujet par titre..." required>
+    <button type="submit">Rechercher</button>
+</form>

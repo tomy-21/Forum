@@ -4,6 +4,9 @@ INSERT INTO `roles` (`role_id`, `name`) VALUES
 (2, 'Modérateur'),
 (3, 'Utilisateur');
 
+-- AJOUTEZ CETTE LIGNE CI-DESSOUS
+INSERT INTO `roles` (`role_id`, `name`) VALUES (4, 'Banni');
+
 -- Insertion des utilisateurs
 -- Mot de passe fictif : 'password123' (dans une vraie application, il faudrait le hacher !)
 INSERT INTO `Utilisateurs` (`user_id`, `role_id`, `name`, `email`, `password`) VALUES
@@ -64,3 +67,4 @@ INSERT INTO `reaction` (`feedback_id`, `user_id`, `message_id`, `type`) VALUES
 INSERT INTO `Reponses` (`reply_id`, `reply_to_id`, `content`) VALUES
 (1, 2, 'Merci pour ton avis détaillé sur Svelte, Alice ! C\'est très éclairant.'), -- David (user 4) répond directement au message 2 d'Alice
 (2, 6, 'Je plussoie ! Disco Elysium est un chef-d\'œuvre.'); -- Un autre utilisateur pourrait répondre directement à la suggestion de Charlie
+

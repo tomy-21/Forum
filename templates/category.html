@@ -9,7 +9,15 @@
     <header>
         <h1>Catégorie : {{.Category.Name}}</h1>
         <p>{{.Category.Description}}</p>
-        <nav><a href="/">Retour à l'accueil</a></nav>
+        {{template "_navbar.html" .}}
+        <nav>
+            <a href="/">Retour à l'accueil</a>
+            
+            {{if .IsAuthenticated}}
+                <a href="/category/{{.Category.ID}}/topics/create">Créer un sujet ici</a>
+            {{end}}
+
+        </nav>
     </header>
 
     <main>
@@ -22,7 +30,11 @@
                 </article>
             {{end}}
         {{else}}
-            <p>Il n'y a pas encore de sujet dans cette catégorie.</p>
+            <p>Il n'y a pas encore de sujet dans cette catégorie.
+            {{if .IsAuthenticated}}
+                Soyez le premier à en créer un !
+            {{end}}
+            </p>
         {{end}}
 
         <hr>

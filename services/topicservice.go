@@ -16,11 +16,23 @@ func NewTopicService(db *sql.DB) *TopicService {
 	return &TopicService{DB: db}
 }
 
+func (s *TopicService) UpdateTopicStatus(topicID int, status string) error {
+	_, err := s.DB.Exec("UPDATE sujet SET status = ? WHERE topic_id = ?", status, topicID)
+	if err != nil {
+		return fmt.Errorf("UpdateTopicStatus: %w", err)
+	}
+	return nil
+}
+
+// Create insère un nouveau sujet en base de données.
+// ... dans services/topicservice.go
+
 // Create insère un nouveau sujet en base de données.
 func (s *TopicService) Create(topic *models.Topic) (int, error) {
+	// MODIFICATION : On utilise topic.ForumID au lieu de la valeur fixe '1'
 	result, err := s.DB.Exec(
 		"INSERT INTO sujet (forum_id, user_id, title, status) VALUES (?, ?, ?, ?)",
-		1, // Forum ID par défaut
+		topic.ForumID, // Utilise l'ID de la catégorie fournie
 		topic.UserID,
 		topic.Title,
 		true, // Statut "ouvert" par défaut
@@ -119,4 +131,45 @@ func (s *TopicService) DeleteTopic(topicID int) error {
 		return fmt.Errorf("TopicService.DeleteTopic: %w", err)
 	}
 	return nil
+}
+
+// ... dans services/topicservice.go
+
+// GetSearchTopicCount retourne le nombre de sujets correspondant à une recherche.
+func (s *TopicService) GetSearchTopicCount(searchQuery string) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM sujet WHERE title LIKE ?"
+	// Le symbole '%' est un joker en SQL : il correspond à n'importe quelle chaîne de caractères.
+	err := s.DB.QueryRow(query, "%"+searchQuery+"%").Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("GetSearchTopicCount: %w", err)
+	}
+	return count, nil
+}
+
+// SearchTopics récupère une liste paginée de sujets correspondant à une recherche.
+func (s *TopicService) SearchTopics(searchQuery string, limit, offset int) ([]models.Topic, error) {
+	query := `
+        SELECT s.topic_id, s.title, s.created_at, u.name
+        FROM sujet s
+        JOIN Utilisateurs u ON s.user_id = u.user_id
+        WHERE s.title LIKE ?
+        ORDER BY s.created_at DESC
+        LIMIT ? OFFSET ?`
+
+	rows, err := s.DB.Query(query, "%"+searchQuery+"%", limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("SearchTopics Query: %w", err)
+	}
+	defer rows.Close()
+
+	var topics []models.Topic
+	for rows.Next() {
+		var t models.Topic
+		if err := rows.Scan(&t.ID, &t.Title, &t.CreatedAt, &t.AuthorName); err != nil {
+			return nil, fmt.Errorf("SearchTopics Scan: %w", err)
+		}
+		topics = append(topics, t)
+	}
+	return topics, nil
 }
