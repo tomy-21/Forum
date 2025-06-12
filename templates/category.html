@@ -9,18 +9,16 @@
     <header>
         <h1>Catégorie : {{.Category.Name}}</h1>
         <p>{{.Category.Description}}</p>
-        {{template "_navbar.html" .}}
-        <nav>
-            <a href="/">Retour à l'accueil</a>
-            
-            {{if .IsAuthenticated}}
-                <a href="/category/{{.Category.ID}}/topics/create">Créer un sujet ici</a>
-            {{end}}
 
-        </nav>
+        {{template "_navbar.html" .}}
+
     </header>
 
     <main>
+        {{if .IsAuthenticated}}
+            <p><a href="/category/{{.Category.ID}}/topics/create"><button>Créer un nouveau sujet dans cette catégorie</button></a></p>
+        {{end}}
+
         <h2>Sujets dans cette catégorie</h2>
         {{if .Topics}}
             {{range .Topics}}
@@ -32,7 +30,7 @@
         {{else}}
             <p>Il n'y a pas encore de sujet dans cette catégorie.
             {{if .IsAuthenticated}}
-                Soyez le premier à en créer un !
+                Soyez le premier !
             {{end}}
             </p>
         {{end}}
