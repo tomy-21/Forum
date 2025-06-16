@@ -53,19 +53,26 @@
                 </tr>
             </thead>
             <tbody>
-                {{range .Topics}}
+                {{range .Users}}
                 <tr>
                     <td>{{.ID}}</td>
-                    <td><a href="/topic/{{.ID}}">{{.Title}}</a></td>
-                    <td>{{.AuthorName}}</td>
+                    <td>{{.Name}}</td>
+                    <td>{{.Email}}</td>
+                    <td>{{.RoleID}}</td>
                     <td>
-                        <form action="/topic/{{.ID}}/delete" method="post" onsubmit="return confirm('Supprimer ce sujet ?');">
-                            <button class="danger" type="submit">Supprimer</button>
+                        {{if eq .RoleID 4}}
+                            <form action="/admin/users/unban/{{.ID}}" method="post">
+                                <button type="submit">Débannir</button>
+                            </form>
+                        {{else if ne .RoleID 1}}
+                            <form action="/admin/users/ban/{{.ID}}" method="post" onsubmit="return confirm('Bannir cet utilisateur ?');">
+                                <button class="danger" type="submit">Bannir</button>
                         </form>
+                    {{end}}
                     </td>
                 </tr>
-                {{end}}
-            </tbody>
+            {{end}}
+        </tbody>
         </table>
     </main>
 </body>

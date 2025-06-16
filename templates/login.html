@@ -2,24 +2,33 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Connexion - Forum</title>
+    <title>Connexion - Mon Forum</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
 </head>
 <body>
-    <h1>Se connecter</h1>
-    <form action="/login" method="post">
-        {{if .Error}}
-            <p style="color:red;">{{.Error}}</p>
-        {{end}}
-        <div>
-            <label for="identifier">Nom d'utilisateur ou Email :</label>
-            <input type="text" id="identifier" name="identifier" required>
-        </div>
-        <div>
-            <label for="password">Mot de passe :</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <button type="submit">Se connecter</button>
-    </form>
-    <p>Pas de compte ? <a href="/register">Inscrivez-vous</a></p>
+    <header>
+        <h1>Se connecter</h1>
+        {{template "_navbar.html" .}}
+    </header>
+
+    <main>
+        <article>
+            <form action="/login" method="post">
+                {{if .Error}}
+                    <p class="error">{{.Error}}</p>
+                {{end}}
+                <div>
+                    <label for="identifier">Nom d'utilisateur ou Email :</label>
+                    <input type="text" id="identifier" name="identifier" required>
+                </div>
+                <div>
+                    <label for="password">Mot de passe :</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Se connecter</button>
+            </form>
+            <p>Pas encore de compte ? <a href="/register">Inscrivez-vous</a></p>
+        </article>
+    </main>
 </body>
 </html>

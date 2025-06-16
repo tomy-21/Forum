@@ -4,16 +4,23 @@
     {{end}}
 
     {{if .IsAuthenticated}}
-        <a href="/profil">Mon Profil</a>
+        {{if ne .Page "Profile"}}
+            <a href="/profil">Mon Profil</a>
+        {{end}}
 
         {{if eq .CurrentUser.RoleID 1}}
             <a href="/admin" style="color: #ffb300; font-weight: bold;">Panneau d'Administration</a>
         {{end}}
 
         <a href="/logout">Déconnexion</a>
+
     {{else}}
-        <a href="/login">Se connecter</a>
-        <a href="/register">S'inscrire</a>
+        {{if ne .Page "Login"}}
+            <a href="/login">Se connecter</a>
+        {{end}}
+        {{if ne .Page "Register"}}
+            <a href="/register">S'inscrire</a>
+        {{end}}
     {{end}}
 </nav>
 

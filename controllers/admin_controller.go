@@ -106,3 +106,24 @@ func (c *AdminController) HandleDeleteMessage(w http.ResponseWriter, r *http.Req
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 	}
 }
+
+// ... dans controllers/admin_controller.go
+
+// HandleUnbanUser gère l'action de débannir un utilisateur.
+func (c *AdminController) HandleUnbanUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "ID utilisateur invalide", http.StatusBadRequest)
+		return
+	}
+
+	err = c.userService.UnbanUser(userID)
+	if err != nil {
+		log.Printf("Erreur lors du débannissement de l'utilisateur %d: %v", userID, err)
+		http.Error(w, "Erreur lors du débannissement", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}

@@ -2,28 +2,38 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Inscription - Forum</title>
+    <title>Inscription - Mon Forum</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
 </head>
 <body>
-    <h1>S'inscrire</h1>
-    <form action="/register" method="post">
-        {{if .Error}}
-            <p style="color:red;">{{.Error}}</p>
-        {{end}}
-        <div>
-            <label for="username">Nom d'utilisateur :</label>
-            <input type="text" id="username" name="username" required>
-        </div>
-        <div>
-            <label for="email">Email :</label>
-            <input type="email" id="email" name="email" required>
-        </div>
-        <div>
-            <label for="password">Mot de passe :</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <button type="submit">S'inscrire</button>
-    </form>
-    <p>Déjà un compte ? <a href="/login">Connectez-vous</a></p>
+    <header>
+        <h1>S'inscrire sur le Forum</h1>
+        {{template "_navbar.html" .}}
+    </header>
+
+    <main>
+        <article>
+            <form action="/register" method="post">
+                {{if .Error}}
+                    <p class="error">{{.Error}}</p>
+                {{end}}
+                <div>
+                    <label for="username">Nom d'utilisateur :</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div>
+                    <label for="email">Email :</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div>
+                    <label for="password">Mot de passe :</label>
+                    <input type="password" id="password" name="password" required>
+                    <small>Doit contenir au moins 12 caractères, une majuscule et un caractère spécial.</small>
+                </div>
+                <button type="submit">S'inscrire</button>
+            </form>
+            <p>Déjà un compte ? <a href="/login">Connectez-vous</a></p>
+        </article>
+    </main>
 </body>
 </html>

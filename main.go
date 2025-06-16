@@ -66,12 +66,18 @@ func main() {
 	authRouter.HandleFunc("/message/{id:[0-9]+}/delete", messageController.HandleDeleteMessage).Methods("POST")
 
 	// -- Routes Administrateur --
+	// ... dans main.go
+
+	// -- Routes Administrateur --
 	adminRouter := r.PathPrefix("/admin").Subrouter()
 	adminRouter.Use(middleware.AdminMiddleware)
 	adminRouter.HandleFunc("/", adminController.ShowDashboard).Methods("GET")
 	adminRouter.HandleFunc("/users/ban/{id:[0-9]+}", adminController.BanUser).Methods("POST")
+	adminRouter.HandleFunc("/users/unban/{id:[0-9]+}", adminController.HandleUnbanUser).Methods("POST") // <-- AJOUTER CETTE LIGNE
 	adminRouter.HandleFunc("/topics/status/{id:[0-9]+}", adminController.HandleUpdateTopicStatus).Methods("POST")
 	adminRouter.HandleFunc("/messages/delete/{id:[0-9]+}", adminController.HandleDeleteMessage).Methods("POST")
+
+	// ...
 
 	// --- Démarrage du Serveur ---
 	log.Println("🚀 Le serveur écoute sur http://localhost:8080")
