@@ -17,10 +17,11 @@ func NewMessageService(db *sql.DB) *MessageService {
 // CreateMessage insère un nouveau message dans la base de données.
 func (s *MessageService) CreateMessage(message *models.Message) error {
 	_, err := s.DB.Exec(
-		"INSERT INTO messages (topic_id, user_id, content) VALUES (?, ?, ?)",
+		"INSERT INTO messages (topic_id, user_id, content, image_url) VALUES (?, ?, ?, ?)",
 		message.TopicID,
 		message.UserID,
 		message.Content,
+		message.ImageURL, // On ajoute la nouvelle valeur
 	)
 	if err != nil {
 		return fmt.Errorf("MessageService.CreateMessage: %w", err)
@@ -29,18 +30,24 @@ func (s *MessageService) CreateMessage(message *models.Message) error {
 }
 
 // GetMessagesByTopicID récupère tous les messages d'un sujet, avec leurs auteurs et réactions, et les trie.
+// ... dans services/messageservice.go
+
+// GetMessagesByTopicID récupère tous les messages d'un sujet, y compris l'URL de l'image, et les trie.
 func (s *MessageService) GetMessagesByTopicID(topicID int, sortBy string) ([]models.Message, error) {
+	// La requête SELECT inclut maintenant m.image_url
 	baseQuery := `
         SELECT
-            m.message_id, m.user_id, m.content, m.created_at, u.name as author_name,
+            m.message_id, m.user_id, m.content, m.created_at, m.image_url, u.name as author_name,
             COALESCE(SUM(CASE WHEN r.type = 'like' THEN 1 ELSE 0 END), 0) as likes,
             COALESCE(SUM(CASE WHEN r.type = 'dislike' THEN 1 ELSE 0 END), 0) as dislikes
         FROM messages m
         JOIN Utilisateurs u ON m.user_id = u.user_id
         LEFT JOIN reaction r ON m.message_id = r.message_id
         WHERE m.topic_id = ?
-        GROUP BY m.message_id, m.user_id, m.content, m.created_at, u.name
+        GROUP BY m.message_id, m.user_id, m.content, m.created_at, m.image_url, u.name
     `
+
+	// La logique de tri reste la même
 	var orderByClause string
 	switch sortBy {
 	case "top":
@@ -62,7 +69,8 @@ func (s *MessageService) GetMessagesByTopicID(topicID int, sortBy string) ([]mod
 	var messages []models.Message
 	for rows.Next() {
 		var msg models.Message
-		if err := rows.Scan(&msg.ID, &msg.UserID, &msg.Content, &msg.CreatedAt, &msg.AuthorName, &msg.Likes, &msg.Dislikes); err != nil {
+		// Le Scan inclut maintenant le champ &msg.ImageURL
+		if err := rows.Scan(&msg.ID, &msg.UserID, &msg.Content, &msg.CreatedAt, &msg.ImageURL, &msg.AuthorName, &msg.Likes, &msg.Dislikes); err != nil {
 			return nil, fmt.Errorf("MessageService.GetMessagesByTopicID Scan: %w", err)
 		}
 		messages = append(messages, msg)

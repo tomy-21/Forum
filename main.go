@@ -47,6 +47,11 @@ func main() {
 	r := mux.NewRouter()
 	r.StrictSlash(true) // Gère les slashs en fin d'URL
 
+	// --- SERVEUR DE FICHIERS STATIQUES ---
+	// Rend le contenu du dossier /static/ (et ses sous-dossiers comme /uploads/) accessible
+	fs := http.FileServer(http.Dir("./static/"))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+
 	// -- Routes Publiques --
 	r.HandleFunc("/", homeController.DisplayHomepage).Methods("GET")
 	r.HandleFunc("/topic/{id:[0-9]+}", topicController.ShowTopic).Methods("GET")
@@ -57,7 +62,7 @@ func main() {
 	// -- Routes Protégées (pour tous les utilisateurs connectés) --
 	authRouter := r.NewRoute().Subrouter()
 	authRouter.Use(middleware.AuthMiddleware)
-	authRouter.HandleFunc("/profil", userController.ShowProfile).Methods("GET") // <-- AJOUT DE LA ROUTE PROFIL
+	authRouter.HandleFunc("/profil", userController.ShowProfile).Methods("GET")
 	authRouter.HandleFunc("/category/{id:[0-9]+}/topics/create", topicController.ShowCreateTopicForm).Methods("GET")
 	authRouter.HandleFunc("/category/{id:[0-9]+}/topics/create", topicController.HandleCreateTopic).Methods("POST")
 	authRouter.HandleFunc("/topic/{id:[0-9]+}/reply", topicController.PostMessage).Methods("POST")
@@ -66,18 +71,13 @@ func main() {
 	authRouter.HandleFunc("/message/{id:[0-9]+}/delete", messageController.HandleDeleteMessage).Methods("POST")
 
 	// -- Routes Administrateur --
-	// ... dans main.go
-
-	// -- Routes Administrateur --
 	adminRouter := r.PathPrefix("/admin").Subrouter()
 	adminRouter.Use(middleware.AdminMiddleware)
 	adminRouter.HandleFunc("/", adminController.ShowDashboard).Methods("GET")
 	adminRouter.HandleFunc("/users/ban/{id:[0-9]+}", adminController.BanUser).Methods("POST")
-	adminRouter.HandleFunc("/users/unban/{id:[0-9]+}", adminController.HandleUnbanUser).Methods("POST") // <-- AJOUTER CETTE LIGNE
+	adminRouter.HandleFunc("/users/unban/{id:[0-9]+}", adminController.HandleUnbanUser).Methods("POST")
 	adminRouter.HandleFunc("/topics/status/{id:[0-9]+}", adminController.HandleUpdateTopicStatus).Methods("POST")
 	adminRouter.HandleFunc("/messages/delete/{id:[0-9]+}", adminController.HandleDeleteMessage).Methods("POST")
-
-	// ...
 
 	// --- Démarrage du Serveur ---
 	log.Println("🚀 Le serveur écoute sur http://localhost:8080")

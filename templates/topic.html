@@ -41,6 +41,10 @@
                 <p><strong>{{.AuthorName}}</strong> a écrit le {{.CreatedAt.Format "02/01/2006 15:04:05"}} :</p>
                 <blockquote>{{.Content}}</blockquote>
                 
+                {{if .ImageURL.Valid}}
+                    <p><img src="{{.ImageURL.String}}" alt="Image du message" style="max-width: 100%; height: auto; border-radius: 5px;"></p>
+                {{end}}
+                
                 <div class="reaction-form">
                     {{if $.IsAuthenticated}}
                         <form action="/react" method="post" style="display:inline;">
@@ -75,9 +79,14 @@
 
         {{if .IsAuthenticated}}
             <h4>Répondre à ce sujet</h4>
-            <form action="/topic/{{.Topic.ID}}/reply" method="post">
+            <form action="/topic/{{.Topic.ID}}/reply" method="post" enctype="multipart/form-data">
                 <div>
-                    <textarea name="content" rows="5" placeholder="Votre message..." required></textarea>
+                    <label for="content">Votre message :</label>
+                    <textarea id="content" name="content" rows="5" placeholder="Votre message..." required></textarea>
+                </div>
+                <div>
+                    <label for="image">Ajouter une image (optionnel) :</label>
+                    <input type="file" id="image" name="image" accept="image/png, image/jpeg, image/gif">
                 </div>
                 <button type="submit">Envoyer la réponse</button>
             </form>

@@ -3,10 +3,16 @@ package controllers
 import (
 	"Forum/models"
 	"Forum/services"
+	"database/sql"
+	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -136,7 +142,13 @@ func (c *TopicController) PostMessage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	topicID, _ := strconv.Atoi(vars["id"])
 
-	r.ParseForm()
+	// On parse un formulaire multipart (qui peut contenir des fichiers)
+	// 32 << 20 signifie une taille max de 32MB pour la requête
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		http.Error(w, "Erreur lors de l'analyse du formulaire", http.StatusBadRequest)
+		return
+	}
+
 	content := r.FormValue("content")
 	if content == "" {
 		http.Redirect(w, r, "/topic/"+strconv.Itoa(topicID), http.StatusSeeOther)
@@ -148,7 +160,36 @@ func (c *TopicController) PostMessage(w http.ResponseWriter, r *http.Request) {
 		UserID:  userID,
 		Content: content,
 	}
-	err := c.messageService.CreateMessage(msg)
+
+	// Traitement du fichier uploadé
+	file, handler, err := r.FormFile("image")
+	if err == nil { // Un fichier a été fourni
+		defer file.Close()
+
+		// Générer un nom de fichier unique pour éviter les conflits
+		fileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), filepath.Ext(handler.Filename))
+		filePath := filepath.Join("static", "uploads", fileName)
+
+		// Créer le fichier sur le serveur
+		dst, err := os.Create(filePath)
+		if err != nil {
+			http.Error(w, "Impossible de créer le fichier sur le serveur", http.StatusInternalServerError)
+			return
+		}
+		defer dst.Close()
+
+		// Copier le contenu du fichier uploadé vers le nouveau fichier
+		if _, err := io.Copy(dst, file); err != nil {
+			http.Error(w, "Impossible de sauvegarder le fichier", http.StatusInternalServerError)
+			return
+		}
+
+		// On enregistre le chemin public de l'image
+		msg.ImageURL = sql.NullString{String: "/" + filePath, Valid: true}
+	}
+
+	// On crée le message en base de données (avec ou sans image)
+	err = c.messageService.CreateMessage(msg)
 	if err != nil {
 		http.Error(w, "Erreur lors de l'envoi du message", http.StatusInternalServerError)
 		return
